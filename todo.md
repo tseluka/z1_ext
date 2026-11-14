@@ -1,0 +1,5 @@
+- with arm plugged in:
+  - sudo ip addr 192.168.123.162/24 dev enp3s0
+  - ping 192.168.123.110
+  - cd z1_controller/build && ./z1_ctrl k, then press ` to go to the start pose, then 2 and q/a etc.
+  - ./z1_ctrl in one terminal and in a second terminal run: cd z1_sdk/examples_py && python3 example_highcmd.py
