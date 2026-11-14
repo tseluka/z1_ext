@@ -1,0 +1,5 @@
+build/
+.vscode/
+*.cpython-3[0-9][0-9]-*.so
+!z1_sdk/lib/unitree_arm_interface.cpython-38-x86_64-linux-gnu.so
+__pycache__/
