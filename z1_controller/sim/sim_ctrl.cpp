@@ -1,4 +1,5 @@
 #include <csignal>
+#include <memory>
 #include <sched.h>
 #include "FSM/FiniteStateMachine.h"
 #include "FSM/State_Passive.h"
@@ -16,8 +17,23 @@
 #include "FSM/State_Trajectory.h"
 #include "FSM/State_LowCmd.h"
 #include "IOROS.h"
+#include "RailTeleop.h"
 
 bool running = true;
+
+// Calibration also sends the 7th-axis carriage to its calibration position (left end).
+// Hooks the real state entry, so it only fires when the FSM actually enters calibration.
+class State_CalibrationRail : public State_Calibration{
+public:
+    State_CalibrationRail(CtrlComponents *ctrlComp, RailTeleop *rail)
+        : State_Calibration(ctrlComp), _rail(rail){}
+    void enter() override{
+        State_Calibration::enter();
+        if(_rail) _rail->requestHome();
+    }
+private:
+    RailTeleop *_rail;
+};
 
 //set real-time program
 void setProcessScheduler(){
@@ -71,9 +87,17 @@ int main(int argc, char **argv){
         events.push_back(new ValueAction("t", "g", 0.5));
         events.push_back(new ValueAction("y", "h", 0.5));
         events.push_back(new ValueAction("down", "up", 1.));
+        // index 7: 7th-axis rail jog (read below, not used by the arm states)
+        events.push_back(new ValueAction("x", "z", 1.));
 
         ctrlComp->cmdPanel = new Keyboard(events, emptyAction);
     }
+    // rail jog / calibration homing (keyboard mode only); must outlive the FSM
+    std::unique_ptr<RailTeleop> rail;
+    if(ctrlComp->ctrl == Control::KEYBOARD){
+        rail.reset(new RailTeleop());
+    }
+
     std::vector<FSMState*> states;
     states.push_back(new State_Passive(ctrlComp));
     states.push_back(new State_BackToStart(ctrlComp));
@@ -88,7 +112,7 @@ int main(int argc, char **argv){
     states.push_back(new State_TeachRepeat(ctrlComp));
     states.push_back(new State_ToState(ctrlComp));
     states.push_back(new State_Trajectory(ctrlComp));
-    states.push_back(new State_Calibration(ctrlComp));
+    states.push_back(new State_CalibrationRail(ctrlComp, rail.get()));
 
     FiniteStateMachine *fsm;
     fsm = new FiniteStateMachine(states, ctrlComp);
@@ -97,8 +121,17 @@ int main(int argc, char **argv){
     signal(SIGINT, [](int signum){running = false;});
     std::this_thread::sleep_for(std::chrono::seconds(1));
     ctrlComp->cmdPanel->start();
-    while(running){
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+    if(rail){
+        const size_t railKey = 7;   // index of the x/z ValueAction above
+        while(running){
+            std::vector<double> dirs = ctrlComp->cmdPanel->getDirections();
+            rail->update(dirs.size() > railKey ? dirs[railKey] : 0.0);
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+    }else{
+        while(running){
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
     }
 
     delete fsm;

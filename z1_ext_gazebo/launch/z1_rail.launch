@@ -1,0 +1,46 @@
+<launch>
+    <!-- Based on unitree_gazebo/launch/z1.launch: same arm, controllers and topics,
+         but the arm is mounted on the 7th-axis rail (urdf/z1_on_rail.xacro).
+         Rail: /z1_gazebo/rail_controller/command  (std_msgs/Float64, metres, -0.52 .. 0.52) -->
+    <arg name="paused" default="true"/>
+    <arg name="gui" default="true"/>
+    <arg name="headless" default="false"/>
+    <arg name="debug" default="false"/>
+    <arg name="UnitreeGripperYN" default="true"/>
+
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(find z1_ext_gazebo)/worlds/z1_rail.world"/>
+        <arg name="debug" value="$(arg debug)"/>
+        <arg name="gui" value="$(arg gui)"/>
+        <arg name="paused" value="$(arg paused)"/>
+        <arg name="use_sim_time" value="true"/>
+        <arg name="headless" value="$(arg headless)"/>
+    </include>
+
+    <param name="robot_description"
+           command="$(find xacro)/xacro --inorder '$(find z1_ext_gazebo)/urdf/z1_on_rail.xacro'
+           UnitreeGripper:=$(arg UnitreeGripperYN)"/>
+
+    <!-- model name must stay z1_gazebo: sim_ctrl talks to /z1_gazebo/... topics.
+         The rail's world joint already lifts everything 30 mm, so spawn at the origin. -->
+    <node pkg="gazebo_ros" type="spawn_model" name="urdf_spawner" respawn="false" output="screen"
+          args="-urdf -model z1_gazebo -param robot_description -unpause"/>
+
+    <rosparam file="$(find z1_description)/config/robot_control.yaml" command="load"/>
+    <rosparam file="$(find z1_ext_gazebo)/config/rail_control.yaml" command="load"/>
+
+    <node pkg="controller_manager" type="spawner" name="controller_spawner" respawn="false"
+          output="screen" ns="/z1_gazebo" unless="$(arg UnitreeGripperYN)"
+          args="joint_state_controller Joint01_controller Joint02_controller Joint03_controller
+                Joint04_controller Joint05_controller Joint06_controller rail_controller"/>
+    <node pkg="controller_manager" type="spawner" name="controller_spawner" respawn="false"
+          output="screen" ns="/z1_gazebo" if="$(arg UnitreeGripperYN)"
+          args="joint_state_controller Joint01_controller Joint02_controller Joint03_controller
+                Joint04_controller Joint05_controller Joint06_controller gripper_controller
+                rail_controller"/>
+
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher"
+          respawn="false" output="screen">
+        <remap from="/joint_states" to="/z1_gazebo/joint_states"/>
+    </node>
+</launch>

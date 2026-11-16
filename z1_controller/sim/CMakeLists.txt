@@ -6,6 +6,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   gazebo_ros
   std_msgs
+  sensor_msgs
   tf
   geometry_msgs
 )
@@ -27,7 +28,7 @@ link_directories(
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-add_executable(sim_ctrl sim_ctrl.cpp IOROS.cpp)
+add_executable(sim_ctrl sim_ctrl.cpp IOROS.cpp RailTeleop.cpp)
 target_link_libraries(sim_ctrl
   libZ1_${CMAKE_HOST_SYSTEM_PROCESSOR}.so
   ${catkin_LIBRARIES}

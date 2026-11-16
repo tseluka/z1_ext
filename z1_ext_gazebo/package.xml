@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>z1_ext_gazebo</name>
+  <version>0.0.2</version>
+  <description>Z1 arm on the 7th-axis rail (cad/whole12) in Gazebo</description>
+  <maintainer email="none@example.com">z1_ext</maintainer>
+  <license>TODO</license>
+  <buildtool_depend>catkin</buildtool_depend>
+  <exec_depend>xacro</exec_depend>
+  <exec_depend>gazebo_ros</exec_depend>
+  <exec_depend>gazebo_ros_control</exec_depend>
+  <exec_depend>controller_manager</exec_depend>
+  <exec_depend>effort_controllers</exec_depend>
+  <exec_depend>joint_state_controller</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>unitree_legged_control</exec_depend>
+  <exec_depend>z1_description</exec_depend>
+  <export>
+    <!-- lets Gazebo resolve package://z1_ext_gazebo/meshes/... (as model://z1_ext_gazebo/...) -->
+    <gazebo_ros gazebo_model_path="${prefix}/.."/>
+  </export>
+</package>

@@ -1,0 +1,7 @@
+# Loaded on top of z1_description/config/robot_control.yaml.
+# Command: /z1_gazebo/rail_controller/command (std_msgs/Float64, metres, clamped to +-0.52)
+z1_gazebo:
+    rail_controller:
+        type: effort_controllers/JointPositionController
+        joint: rail_joint
+        pid: {p: 2000.0, i: 0.0, d: 250.0}
